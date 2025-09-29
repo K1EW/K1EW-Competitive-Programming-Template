@@ -1,1 +1,8 @@
-site_name: My Docs
+site_name: K1EW CP Template
+nav:
+  - Home: index.md
+  - Template: template.md
+theme:
+  name: readthedocs
+extra_css:
+  - css/extra.css
