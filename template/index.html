@@ -59,6 +59,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#strongly-connected-component">Strongly Connected Component</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#heavy-light-decomposition">Heavy-Light Decomposition</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -293,6 +295,65 @@ vector&lt;int&gt; find_scc(int n, vector&lt;int&gt; adj[]) {
     }
 
     return scc;
+}
+</code></pre>
+<h2 id="heavy-light-decomposition">Heavy-Light Decomposition</h2>
+<pre><code class="language-cpp">vector&lt;int&gt; adj[MXN];
+int sz[MXN], parent[MXN], depth[MXN], tin[MXN], tout[MXN], top[MXN];
+int n;
+void dfs1(int u, int p) {
+    sz[u] = 1;
+    vector&lt;int&gt; children;
+    for (auto v : adj[u]) {
+        if (v == p) { continue; }
+        depth[v] = depth[u] + 1;
+        dfs1(v, u);
+        children.emplace_back(v);
+        sz[u] += sz[v];
+        parent[v] = u;
+    }
+    swap(adj[u], children);
+}
+int dfs2(int u, int timer) {
+    tin[u] = timer;
+    for (auto v : adj[u]) {
+        if (v == adj[u][0]) {
+            top[v] = top[u];
+        } else {
+            top[v] = v;
+        }
+        timer = dfs2(v, timer+1);
+    }
+    tout[u] = timer + 1;
+    return timer;
+}
+void hld(int root) {
+    dfs1(root, -1);
+    for (int i=1;i&lt;=n;i++) {
+        sort(adj[i].begin(), adj[i].end(), [&amp;](const int &amp;u, const int &amp;v) {
+            return sz[u] &gt; sz[v];
+        });
+    }
+    top[root] = root;
+    dfs2(root, 1);
+}
+void point_update(SegTree &amp;segtree, int u, int val) {
+    segtree.update(1, 1, n, tin[u], val);
+}
+int query_subtree(SegTree &amp;segtree, int u) {
+    return segtree.query(1, 1, n, tin[u], tout[u] - 1);
+}
+int query_path(SegTree &amp;segtree, int u, int v) {
+    int res = 0;
+    while (top[u] != top[v]) {
+        if (depth[top[u]] &lt; depth[top[v]]) {
+            swap(u, v);
+        }
+        res = segtree.merge_segment(res, segtree.query(1, 1, n, tin[top[u]], tin[u]));
+        u = parent[top[u]];
+    }
+    res = segtree.merge_segment(res, segtree.query(1, 1, n, min(tin[u], tin[v]), max(tin[u], tin[v])));
+    return res;
 }
 </code></pre>
               
