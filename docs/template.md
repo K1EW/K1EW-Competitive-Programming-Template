@@ -79,64 +79,128 @@ struct SegTree {
 
 ## Lazy Propagation Segment Tree
 ```cpp
-// Example: max range update & max range query
+// Example: sum range update & range query
 struct LazySegTree {
-    private:
-        vector<int> tree; 
-        vector<int> lazy; 
-    public:
-        LazySegTree(int n) {
-            tree.assign(4*n+5, 0); 
-            lazy.assign(4*n+5, 0); 
-        }
-        int merge_segment(const int &seg1, const int &seg2) {
-            return max(seg1, seg2);
-        }
-        void apply(int v, int x) {
-            tree[v] = max(tree[v], x); 
-            lazy[v] = max(lazy[v], x); 
-        }
-        void push(int v) {
-            if (!lazy[v]) { return; } 
-            apply(v*2, lazy[v]);
-            apply(v*2+1, lazy[v]);
-            lazy[v] = 0; 
-        }
-        void build(int a[], int v, int tl, int tr) {
-            if (tl == tr) {
-                tree[v] = a[tl]; 
-            } else {
-                int tm = (tl + tr) >> 1;
-                build(a, v*2, tl, tm);
-                build(a, v*2+1, tm+1, tr);
-                tree[v] = merge_segment(tree[v*2], tree[v*2+1]); 
-            }
-        }
-        void update(int v, int tl, int tr, int l, int r, int val) {
-            if (tr < l || r < tl) { return; }
-            if (l <= tl && tl <= r) {
-                apply(v, val);
-            } else {
-                push(v);
-                int tm = (tl + tr) >> 1;
-                update(v*2, tl, tm, l, r, val); 
-                update(v*2+1, tm+1, tr, l, r, val); 
-                tree[v] = merge_segment(tree[v*2], tree[v*2+1]); 
-            }
-        }
-        int query(int v, int tl, int tr, int l, int r) { 
-            if (tr < l || r < tl) { return 0; }
-            if (l <= tl && tl <= r) {
-                return tree[v];
-            }
-            push(v);
+    vector<int> tree; 
+    vector<int> lazy; 
+    LazySegTree(int n) {
+        tree.assign(4*n+5, 0); 
+        lazy.assign(4*n+5, 0); 
+    }
+    int merge_segment(const int &seg1, const int &seg2) {
+        return seg1 + seg2;
+    }
+    void apply(int v, int x, int tl, int tr) {
+        tree[v] += x * (tr - tl + 1);
+        lazy[v] += x;
+    }
+    void push(int v, int tl, int tr) {
+        if (!lazy[v]) { return; } 
+        int tm = (tl + tr) >> 1;
+        apply(v*2, lazy[v], tl, tm);
+        apply(v*2+1, lazy[v], tm+1, tr);
+        lazy[v] = 0; 
+    }
+    void update(int v, int tl, int tr, int l, int r, int val) {
+        if (tr < l || r < tl) { return; }
+        if (l <= tl && tr <= r) {
+            apply(v, val, tl, tr);
+        } else {
+            push(v, tl, tr);
             int tm = (tl + tr) >> 1;
-            return merge_segment(
-                query(v*2, tl, tm, l, r),
-                query(v*2+1, tm+1, tr, l, r)
-            );
+            update(v*2, tl, tm, l, r, val); 
+            update(v*2+1, tm+1, tr, l, r, val); 
+            tree[v] = merge_segment(tree[v*2], tree[v*2+1]); 
         }
+    }
+    int query(int v, int tl, int tr, int l, int r) { 
+        if (tr < l || r < tl) { return 0; }
+        if (l <= tl && tr <= r) {
+            return tree[v];
+        }
+        push(v, tl, tr);
+        int tm = (tl + tr) >> 1;
+        return merge_segment(
+            query(v*2, tl, tm, l, r),
+            query(v*2+1, tm+1, tr, l, r)
+        );
+    }
 };
+```
+
+## Heavy-Light Decomposition
+```cpp
+vector<int> adj[MXN];
+int sz[MXN], parent[MXN], depth[MXN], tin[MXN], tout[MXN], top[MXN];
+int n;
+void dfs1(int u, int p) {
+    sz[u] = 1;
+    vector<int> children;
+    for (auto v : adj[u]) {
+        if (v == p) { continue; }
+        depth[v] = depth[u] + 1;
+        dfs1(v, u);
+        children.emplace_back(v);
+        sz[u] += sz[v];
+        parent[v] = u;
+    }
+    swap(adj[u], children);
+}
+int dfs2(int u, int timer) {
+    tin[u] = timer;
+    for (auto v : adj[u]) {
+        if (v == adj[u][0]) {
+            top[v] = top[u];
+        } else {
+            top[v] = v;
+        }
+        timer = dfs2(v, timer+1);
+    }
+    tout[u] = timer + 1;
+    return timer;
+}
+void hld(int root) {
+    dfs1(root, -1);
+    for (int i=1;i<=n;i++) {
+        sort(adj[i].begin(), adj[i].end(), [&](const int &u, const int &v) {
+            return sz[u] > sz[v];
+        });
+    }
+    top[root] = root;
+    dfs2(root, 1);
+}
+void point_update(SegTree &segtree, int u, int val) {
+    segtree.update(1, 1, n, tin[u], val);
+}
+int query_subtree(SegTree &segtree, int u) {
+    return segtree.query(1, 1, n, tin[u], tout[u] - 1);
+}
+int query_path(SegTree &segtree, int u, int v) {
+    int res = 0;
+    while (top[u] != top[v]) {
+        if (depth[top[u]] < depth[top[v]]) {
+            swap(u, v);
+        }
+        res = segtree.merge_segment(res, segtree.query(1, 1, n, tin[top[u]], tin[u]));
+        u = parent[top[u]];
+    }
+    res = segtree.merge_segment(res, segtree.query(1, 1, n, min(tin[u], tin[v]), max(tin[u], tin[v])));
+    return res;
+}
+```
+
+## Heavy-Light Decomposition with Range Update
+```cpp
+void range_update(LazySegTree &segtree, int u, int v, int val) {
+    while (top[u] != top[v]) {
+        if (depth[top[u]] < depth[top[v]]) {
+            swap(u, v);
+        }
+        segtree.update(1, 1, n, tin[top[u]], tin[u], val);
+        u = parent[top[u]];
+    }
+    segtree.update(1, 1, n, min(tin[u], tin[v]), max(tin[u], tin[v]), val);
+}
 ```
 
 ## Mo's algorithm
@@ -218,66 +282,5 @@ vector<int> find_scc(int n, vector<int> adj[]) {
     }
 
     return scc;
-}
-```
-
-## Heavy-Light Decomposition
-```cpp
-vector<int> adj[MXN];
-int sz[MXN], parent[MXN], depth[MXN], tin[MXN], tout[MXN], top[MXN];
-int n;
-void dfs1(int u, int p) {
-    sz[u] = 1;
-    vector<int> children;
-    for (auto v : adj[u]) {
-        if (v == p) { continue; }
-        depth[v] = depth[u] + 1;
-        dfs1(v, u);
-        children.emplace_back(v);
-        sz[u] += sz[v];
-        parent[v] = u;
-    }
-    swap(adj[u], children);
-}
-int dfs2(int u, int timer) {
-    tin[u] = timer;
-    for (auto v : adj[u]) {
-        if (v == adj[u][0]) {
-            top[v] = top[u];
-        } else {
-            top[v] = v;
-        }
-        timer = dfs2(v, timer+1);
-    }
-    tout[u] = timer + 1;
-    return timer;
-}
-void hld(int root) {
-    dfs1(root, -1);
-    for (int i=1;i<=n;i++) {
-        sort(adj[i].begin(), adj[i].end(), [&](const int &u, const int &v) {
-            return sz[u] > sz[v];
-        });
-    }
-    top[root] = root;
-    dfs2(root, 1);
-}
-void point_update(SegTree &segtree, int u, int val) {
-    segtree.update(1, 1, n, tin[u], val);
-}
-int query_subtree(SegTree &segtree, int u) {
-    return segtree.query(1, 1, n, tin[u], tout[u] - 1);
-}
-int query_path(SegTree &segtree, int u, int v) {
-    int res = 0;
-    while (top[u] != top[v]) {
-        if (depth[top[u]] < depth[top[v]]) {
-            swap(u, v);
-        }
-        res = segtree.merge_segment(res, segtree.query(1, 1, n, tin[top[u]], tin[u]));
-        u = parent[top[u]];
-    }
-    res = segtree.merge_segment(res, segtree.query(1, 1, n, min(tin[u], tin[v]), max(tin[u], tin[v])));
-    return res;
 }
 ```
