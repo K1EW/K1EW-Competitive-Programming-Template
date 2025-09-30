@@ -220,3 +220,64 @@ vector<int> find_scc(int n, vector<int> adj[]) {
     return scc;
 }
 ```
+
+## Heavy-Light Decomposition
+```cpp
+vector<int> adj[MXN];
+int sz[MXN], parent[MXN], depth[MXN], tin[MXN], tout[MXN], top[MXN];
+int n;
+void dfs1(int u, int p) {
+    sz[u] = 1;
+    vector<int> children;
+    for (auto v : adj[u]) {
+        if (v == p) { continue; }
+        depth[v] = depth[u] + 1;
+        dfs1(v, u);
+        children.emplace_back(v);
+        sz[u] += sz[v];
+        parent[v] = u;
+    }
+    swap(adj[u], children);
+}
+int dfs2(int u, int timer) {
+    tin[u] = timer;
+    for (auto v : adj[u]) {
+        if (v == adj[u][0]) {
+            top[v] = top[u];
+        } else {
+            top[v] = v;
+        }
+        timer = dfs2(v, timer+1);
+    }
+    tout[u] = timer + 1;
+    return timer;
+}
+void hld(int root) {
+    dfs1(root, -1);
+    for (int i=1;i<=n;i++) {
+        sort(adj[i].begin(), adj[i].end(), [&](const int &u, const int &v) {
+            return sz[u] > sz[v];
+        });
+    }
+    top[root] = root;
+    dfs2(root, 1);
+}
+void point_update(SegTree &segtree, int u, int val) {
+    segtree.update(1, 1, n, tin[u], val);
+}
+int query_subtree(SegTree &segtree, int u) {
+    return segtree.query(1, 1, n, tin[u], tout[u] - 1);
+}
+int query_path(SegTree &segtree, int u, int v) {
+    int res = 0;
+    while (top[u] != top[v]) {
+        if (depth[top[u]] < depth[top[v]]) {
+            swap(u, v);
+        }
+        res = segtree.merge_segment(res, segtree.query(1, 1, n, tin[top[u]], tin[u]));
+        u = parent[top[u]];
+    }
+    res = segtree.merge_segment(res, segtree.query(1, 1, n, min(tin[u], tin[v]), max(tin[u], tin[v])));
+    return res;
+}
+```

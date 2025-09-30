@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Template - K1EW CP Template</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../css/extra.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Template";
+        var mkdocs_page_input_path = "template.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> K1EW CP Template
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Template</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#fast-io">Fast IO</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#disjoint-set-union">Disjoint Set Union</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#segment-tree">Segment Tree</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#lazy-propagation-segment-tree">Lazy Propagation Segment Tree</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#mos-algorithm">Mo's algorithm</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#strongly-connected-component">Strongly Connected Component</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">K1EW CP Template</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Template</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="template">Template</h1>
+<h2 id="fast-io">Fast IO</h2>
+<pre><code class="language-cpp">std::ios_base::sync_with_stdio(false);
+std::cin.tie(0);
+</code></pre>
+<h2 id="disjoint-set-union">Disjoint Set Union</h2>
+<pre><code class="language-cpp">struct DSU {
+    vector&lt;int&gt; parent;
+    vector&lt;int&gt; rank;
+    DSU(int n) {
+        parent.assign(n+5, 0);
+        rank.assign(n+5, 0);
+        for (int i=1;i&lt;=n;i++) { parent[i] = i; }
+    }
+    int find(int u) {
+        if (parent[u] == u) { return u; }
+        return parent[u] = find(parent[u]);
+    }
+    void union_sets(int u, int v) {
+        u = find(u);
+        v = find(v);
+        if (u != v) {
+            if (rank[u] &lt; rank[v]) { swap(u, v); }
+            parent[v] = u;
+            rank[u] += rank[v];
+        }
+    }
+};
+</code></pre>
+<h2 id="segment-tree">Segment Tree</h2>
+<pre><code class="language-cpp">// Example: max point update &amp; max range query
+struct SegTree {
+    vector&lt;int&gt; tree; 
+    SegTree(int n) {
+        tree.assign(4*n+5, 0); 
+    }
+    int merge_segment(const int &amp;seg1, const int &amp;seg2) {
+        return max(seg1, seg2);
+    }
+    void build(int a[], int v, int tl, int tr) {
+        if (tl == tr) {
+            tree[v] = a[tl]; 
+        } else {
+            int tm = (tl + tr) &gt;&gt; 1;
+            build(a, v*2, tl, tm);
+            build(a, v*2+1, tm+1, tr);
+            tree[v] = merge_segment(tree[v*2], tree[v*2+1]); 
+        }
+    }
+    void update(int v, int tl, int tr, int pos, int val) {
+        if (tl == tr) {
+            tree[v] = max(tree[v], val); 
+        } else {
+            int tm = (tl + tr) &gt;&gt; 1;
+            if (pos &lt;= tm) { update(v*2, tl, tm, pos, val); }
+            else { update(v*2+1, tm+1, tr, pos, val); }
+            tree[v] = merge_segment(tree[v*2], tree[v*2+1]); 
+        }
+    }
+    int query(int v, int tl, int tr, int l, int r) { 
+        if (tr &lt; l || r &lt; tl) { return 0; }
+        if (l &lt;= tl &amp;&amp; tr &lt;= r) {
+            return tree[v];
+        }
+        int tm = (tl + tr) &gt;&gt; 1;
+        return merge_segment(
+            query(v*2, tl, tm, l, r),
+            query(v*2+1, tm+1, tr, l, r)
+        );
+    }
+};
+</code></pre>
+<h2 id="lazy-propagation-segment-tree">Lazy Propagation Segment Tree</h2>
+<pre><code class="language-cpp">// Example: max range update &amp; max range query
+struct LazySegTree {
+    private:
+        vector&lt;int&gt; tree; 
+        vector&lt;int&gt; lazy; 
+    public:
+        LazySegTree(int n) {
+            tree.assign(4*n+5, 0); 
+            lazy.assign(4*n+5, 0); 
+        }
+        int merge_segment(const int &amp;seg1, const int &amp;seg2) {
+            return max(seg1, seg2);
+        }
+        void apply(int v, int x) {
+            tree[v] = max(tree[v], x); 
+            lazy[v] = max(lazy[v], x); 
+        }
+        void push(int v) {
+            if (!lazy[v]) { return; } 
+            apply(v*2, lazy[v]);
+            apply(v*2+1, lazy[v]);
+            lazy[v] = 0; 
+        }
+        void build(int a[], int v, int tl, int tr) {
+            if (tl == tr) {
+                tree[v] = a[tl]; 
+            } else {
+                int tm = (tl + tr) &gt;&gt; 1;
+                build(a, v*2, tl, tm);
+                build(a, v*2+1, tm+1, tr);
+                tree[v] = merge_segment(tree[v*2], tree[v*2+1]); 
+            }
+        }
+        void update(int v, int tl, int tr, int l, int r, int val) {
+            if (tr &lt; l || r &lt; tl) { return; }
+            if (l &lt;= tl &amp;&amp; tl &lt;= r) {
+                apply(v, val);
+            } else {
+                push(v);
+                int tm = (tl + tr) &gt;&gt; 1;
+                update(v*2, tl, tm, l, r, val); 
+                update(v*2+1, tm+1, tr, l, r, val); 
+                tree[v] = merge_segment(tree[v*2], tree[v*2+1]); 
+            }
+        }
+        int query(int v, int tl, int tr, int l, int r) { 
+            if (tr &lt; l || r &lt; tl) { return 0; }
+            if (l &lt;= tl &amp;&amp; tl &lt;= r) {
+                return tree[v];
+            }
+            push(v);
+            int tm = (tl + tr) &gt;&gt; 1;
+            return merge_segment(
+                query(v*2, tl, tm, l, r),
+                query(v*2+1, tm+1, tr, l, r)
+            );
+        }
+};
+</code></pre>
+<h2 id="mos-algorithm">Mo's algorithm</h2>
+<pre><code class="language-cpp">#define BLOCK_SIZE 450
+void add(int idx) {
+}
+void remove(int idx) {
+}
+struct Query {
+    int l, r, idx;
+    Query(int l, int r, int idx) {
+        this-&gt;l = l;
+        this-&gt;r = r;
+        this-&gt;idx = idx;
+    }
+    bool operator&lt;(const Query &amp;other) const {
+        if (l / BLOCK_SIZE != other.l / BLOCK_SIZE) {
+            return make_pair(l / BLOCK_SIZE, r) &lt;
+                   make_pair(other.l / BLOCK_SIZE, other.r);
+        }
+        return (l / BLOCK_SIZE % 2) ? (r &lt; other.r) : (r &gt; other.r);
+    }
+};
+vector&lt;int&gt; mo(int q, vector&lt;Query&gt; &amp;queries) {
+    vector&lt;int&gt; ans(q);
+    sort(queries.begin(), queries.end());
+    int l = 1, r = 0;
+    for (Query q : queries) {
+        while (r &lt; q.r) { add(++r); }
+        while (r &gt; q.r) { remove(r--); }
+        while (l &gt; q.l) { add(--l); }
+        while (l &lt; q.l) { remove(l++); }
+        // ans[q.idx] = ...
+    }
+    return ans;
+}
+</code></pre>
+<h2 id="strongly-connected-component">Strongly Connected Component</h2>
+<pre><code class="language-cpp">void dfs(int u, vector&lt;int&gt; adj[],  vector&lt;bool&gt; &amp;vis, vector&lt;int&gt; &amp;output) {
+    vis[u] = true;
+    for (auto v : adj[u]) {
+        if (vis[v]) { continue; }
+        dfs(v, adj, vis, output);
+    }
+    output.emplace_back(u);
+}
+
+vector&lt;int&gt; find_scc(int n, vector&lt;int&gt; adj[]) {
+    vector&lt;int&gt; scc(n+5);
+
+    vector&lt;int&gt; order;
+    vector&lt;bool&gt; vis(n+5);
+    for (int v=1;v&lt;=n;v++) {
+        if (vis[v]) { continue; }
+        dfs(v, adj, vis, order);
+    }
+
+    vector&lt;int&gt; adj_T[n+5];
+    for (int u=1;u&lt;=n;u++) { adj[u].clear(); }
+    for (int u=1;u&lt;=n;u++) {
+        for (auto v: adj[u]) {
+            adj_T[v].emplace_back(u);
+        }
+    }
+
+    vis.assign(n+5, false);
+    reverse(order.begin(), order.end());
+    for (auto u : order) {
+        if (vis[u]) { continue; }
+        vector&lt;int&gt; component;
+        dfs(u, adj_T,  vis, component);
+        int root = *min_element(component.begin(), component.end());
+        for (auto v : adj[u]) {
+            scc[v] = u;
+        }
+    }
+
+    return scc;
+}
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
