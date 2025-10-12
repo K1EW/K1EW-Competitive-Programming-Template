@@ -67,6 +67,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#sieve-of-eratosthenes">Sieve of Eratosthenes</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#grahams-scan">Graham's scan</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -409,6 +411,60 @@ vector&lt;bool&gt; compute_primes(int N) {
         }
     }
     return is_primes;
+}
+</code></pre>
+<h2 id="grahams-scan">Graham's scan</h2>
+<pre><code class="language-cpp">struct pt {
+    long long x, y;
+    pt() {}
+    pt(long long _x, long long _y) : x(_x), y(_y) {}
+    pt operator+(const pt &amp;p) const { return pt(x + p.x, y + p.y); }
+    pt operator-(const pt &amp;p) const { return pt(x - p.x, y - p.y); }
+    long long cross(const pt &amp;p) const { return x * p.y - y * p.x; }
+    long long dot(const pt &amp;p) const { return x * p.x + y * p.y; }
+    long long cross(const pt &amp;a, const pt &amp;b) const { return (a - *this).cross(b - *this); }
+    long long dot(const pt &amp;a, const pt &amp;b) const { return (a - *this).dot(b - *this); }
+    long long sqrLen() const { return this-&gt;dot(*this); }
+    bool operator==(const pt&amp; t) const { return x == t.x &amp;&amp; y == t.y; }
+};
+int orientation(const pt &amp;a, const pt &amp;b, const pt &amp;c) {
+    long long v = a.cross(b, c);
+    if (v &lt; 0) return -1; // clockwise
+    if (v &gt; 0) return 1;  // counter-clockwise
+    return 0;             // collinear
+}
+bool cw(const pt &amp;a, const pt &amp;b, const pt &amp;c, bool include_collinear) {
+    int o = orientation(a, b, c);
+    return o &lt; 0 || (include_collinear &amp;&amp; o == 0);
+}
+bool collinear(const pt &amp;a, const pt &amp;b, const pt &amp;c) {
+    return orientation(a, b, c) == 0;
+}
+void convex_hull(vector&lt;pt&gt;&amp; a, bool include_collinear = false) {
+    if (a.size() &lt;= 1) return;
+    pt p0 = *min_element(a.begin(), a.end(), [](const pt &amp;a, const pt &amp;b) {
+        return make_pair(a.y, a.x) &lt; make_pair(b.y, b.x);
+    });
+    sort(a.begin(), a.end(), [&amp;p0](const pt &amp;a, const pt &amp;b) {
+        int o = orientation(p0, a, b);
+        if (o == 0) // collinear, closer first
+            return (p0 - a).sqrLen() &lt; (p0 - b).sqrLen();
+        return o &lt; 0; // clockwise order
+    });
+    if (include_collinear) {
+        int i = (int)a.size() - 1;
+        while (i &gt;= 0 &amp;&amp; collinear(p0, a[i], a.back())) i--;
+        reverse(a.begin() + i + 1, a.end());
+    }
+    vector&lt;pt&gt; st;
+    for (int i = 0; i &lt; (int)a.size(); i++) {
+        while (st.size() &gt; 1 &amp;&amp; !cw(st[st.size()-2], st.back(), a[i], include_collinear))
+            st.pop_back();
+        st.push_back(a[i]);
+    }
+    if (!include_collinear &amp;&amp; st.size() == 2 &amp;&amp; st[0] == st[1])
+        st.pop_back();
+    a = st;
 }
 </code></pre>
               
