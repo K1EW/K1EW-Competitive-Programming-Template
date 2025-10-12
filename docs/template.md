@@ -101,6 +101,16 @@ struct LazySegTree {
         apply(v*2+1, lazy[v], tm+1, tr);
         lazy[v] = 0; 
     }
+    void build(int a[], int v, int tl, int tr) {
+        if (tl == tr) {
+            tree[v] = a[tl];
+        } else {
+            int tm = (tl + tr) >> 1;
+            build(a, v*2, tl, tm);
+            build(a, v*2+1, tm+1, tr);
+            tree[v] = merge_segment(tree[v*2], tree[v*2+1]); 
+        }
+    }
     void update(int v, int tl, int tr, int l, int r, int val) {
         if (tr < l || r < tl) { return; }
         if (l <= tl && tr <= r) {
@@ -282,5 +292,47 @@ vector<int> find_scc(int n, vector<int> adj[]) {
     }
 
     return scc;
+}
+```
+
+## Inverse Modulo
+```cpp
+#define MOD ...
+// a in range [1...m-1]
+int inv(int a) {
+    return a <= 1 ? a : MOD - (long long)(MOD/a) * inv(MOD % a) % MOD;
+}
+// Precompute all modulo inverse [1...m-1]
+int inv[MOD];
+inv[1] = 1;
+for(int a = 2; a < MOD; ++a) {
+    inv[a] = MOD - (long long)(MOD/a) * inv[MOD%a] % MOD;
+}
+```
+
+## Sieve of Eratosthenes
+```cpp
+// Function to precompute all factors for numbers from 1..N
+vector<vector<int>> compute_factors(int N) {
+    vector<vector<int>> factors(N + 1);
+    for (int i = 1; i <= N; ++i) {
+        for (int j = i; j <= N; j += i) {
+            factors[j].push_back(i);
+        }
+    }
+    return factors;
+}
+// Precompute all primes up to N using Sieve of Eratosthenes
+vector<bool> compute_primes(int N) {
+    vector<bool> is_prime(N + 1, true);
+    is_prime[0] = is_prime[1] = false;
+    for (int i = 2; i * i <= N; ++i) {
+        if (is_prime[i]) {
+            for (int j = i * i; j <= N; j += i) {
+                is_prime[j] = false;
+            }
+        }
+    }
+    return is_primes;
 }
 ```
