@@ -63,6 +63,10 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#strongly-connected-component">Strongly Connected Component</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#inverse-modulo">Inverse Modulo</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sieve-of-eratosthenes">Sieve of Eratosthenes</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -183,6 +187,16 @@ struct LazySegTree {
         apply(v*2, lazy[v], tl, tm);
         apply(v*2+1, lazy[v], tm+1, tr);
         lazy[v] = 0; 
+    }
+    void build(int a[], int v, int tl, int tr) {
+        if (tl == tr) {
+            tree[v] = a[tl];
+        } else {
+            int tm = (tl + tr) &gt;&gt; 1;
+            build(a, v*2, tl, tm);
+            build(a, v*2+1, tm+1, tr);
+            tree[v] = merge_segment(tree[v*2], tree[v*2+1]); 
+        }
     }
     void update(int v, int tl, int tr, int l, int r, int val) {
         if (tr &lt; l || r &lt; tl) { return; }
@@ -357,6 +371,44 @@ vector&lt;int&gt; find_scc(int n, vector&lt;int&gt; adj[]) {
     }
 
     return scc;
+}
+</code></pre>
+<h2 id="inverse-modulo">Inverse Modulo</h2>
+<pre><code class="language-cpp">#define MOD ...
+// a in range [1...m-1]
+int inv(int a) {
+    return a &lt;= 1 ? a : MOD - (long long)(MOD/a) * inv(MOD % a) % MOD;
+}
+// Precompute all modulo inverse [1...m-1]
+int inv[MOD];
+inv[1] = 1;
+for(int a = 2; a &lt; MOD; ++a) {
+    inv[a] = MOD - (long long)(MOD/a) * inv[MOD%a] % MOD;
+}
+</code></pre>
+<h2 id="sieve-of-eratosthenes">Sieve of Eratosthenes</h2>
+<pre><code class="language-cpp">// Function to precompute all factors for numbers from 1..N
+vector&lt;vector&lt;int&gt;&gt; compute_factors(int N) {
+    vector&lt;vector&lt;int&gt;&gt; factors(N + 1);
+    for (int i = 1; i &lt;= N; ++i) {
+        for (int j = i; j &lt;= N; j += i) {
+            factors[j].push_back(i);
+        }
+    }
+    return factors;
+}
+// Precompute all primes up to N using Sieve of Eratosthenes
+vector&lt;bool&gt; compute_primes(int N) {
+    vector&lt;bool&gt; is_prime(N + 1, true);
+    is_prime[0] = is_prime[1] = false;
+    for (int i = 2; i * i &lt;= N; ++i) {
+        if (is_prime[i]) {
+            for (int j = i * i; j &lt;= N; j += i) {
+                is_prime[j] = false;
+            }
+        }
+    }
+    return is_primes;
 }
 </code></pre>
               
